@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chess</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-area">
+        <div class="header">
+            <h1>Chess Online</h1>
+        </div>
+        
+        <div class="game-container">
+            <div class="board-container">
+                <div id="chessboard">
+                    <!-- Squares will be populated by JavaScript -->
+                </div>
+                <div class="board-labels">
+                    <div class="file-labels">
+                        <span>a</span>
+                        <span>b</span>
+                        <span>c</span>
+                        <span>d</span>
+                        <span>e</span>
+                        <span>f</span>
+                        <span>g</span>
+                        <span>h</span>
+                    </div>
+                    <div class="rank-labels">
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                        <span>6</span>
+                        <span>7</span>
+                        <span>8</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-info">
+                <div id="player-role" class="info-panel">Your Role: Not assigned</div>
+                <div id="status" class="info-panel">Connecting to server...</div>
+                <div id="turn-indicator" class="info-panel">Turn: Waiting for game to start</div>
+                <div id="last-move-info" class="info-panel">Last move: N/A</div>
+                
+                <div id="messages-container" class="info-panel">
+                    <h3>Game Log</h3>
+                    <div id="messages"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

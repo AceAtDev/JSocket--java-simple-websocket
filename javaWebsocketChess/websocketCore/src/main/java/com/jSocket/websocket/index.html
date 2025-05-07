@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chess</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        #game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+            margin: 20px 0;
+            background-color: #fff; /* Ensure board background is visible */
+        }
+        .square {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px; /* Make pieces easily visible */
+            box-sizing: border-box;
+        }
+        .light { background-color: #f0d9b5; }
+        .dark { background-color: #b58863; }
+        .piece-white { color: #ffffff; text-shadow: 0 0 2px black, 0 0 1px black; } /* White pieces */
+        .piece-black { color: #000000; text-shadow: 0 0 2px #cccccc; } /* Black pieces */
+        .selected {
+            outline: 3px solid #007bff;
+            outline-offset: -3px;
+        }
+        .info-panel {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 400px;
+            text-align: center;
+            font-size: 1em;
+        }
+        #messages-container { width: 400px; margin-top: 15px; }
+        #messages {
+            max-height: 120px;
+            border: 1px solid #ccc;
+            overflow-y: scroll;
+            padding: 8px;
+            background-color: #fff;
+            font-size: 0.9em;
+            border-radius: 4px;
+        }
+        #messages p { margin: 3px 0; }
+        #messages .error { color: red; font-weight: bold; }
+        #messages .success { color: green; }
+        #messages .server-msg { color: blue; }
+    </style>
+</head>
+<body>
+    <div id="game-area">
+        <h1>WebSocket Chess</h1>
+        <div id="player-role" class="info-panel">Your Role: Not assigned</div>
+        <div id="status" class="info-panel">Connecting to server...</div>
+        <div id="turn-indicator" class="info-panel">Turn: Waiting for game to start</div>
+        <div id="chessboard">
+            <!-- Squares will be populated by JavaScript -->
+        </div>
+        <div id="last-move-info" class="info-panel">Last move: N/A</div>
+        <div id="messages-container">
+            Log:
+            <div id="messages"></div>
+        </div>
+    </div>
+
+    <script>
+        const chessboardDiv = document.getElementById('chessboard');
+        const statusDiv = document.getElementById('status');
+        const turnIndicatorDiv = document.getElementById('turn-indicator');
+        const playerRoleDiv = document.getElementById('player-role');
+        const messagesDiv = document.getElementById('messages');
+        const lastMoveInfoDiv = document.getElementById('last-move-info');
+
+        const wsUrl = `ws://${window.location.hostname}:8080`;
+        let socket;
+
+        let currentBoardState = null; // Will hold the 8x8 array from the server
+        let selectedSquare = null;
+        let myPlayerRole = null;
+        let isMyTurn = false;
+
+        // Draw an empty board initially to ensure the grid is visible
+        drawBoard(Array(8).fill().map(() => Array(8).fill(null)));
+        logMessage("Client: Initial empty board drawn.");
+
+        function connect() {
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function(event) {
+                logMessage("Client: Connected to WebSocket server.", "success");
+                statusDiv.textContent = "Connected. Waiting for game...";
+            };
+
+            socket.onmessage = function(event) {
+                logMessage(`Server: ${event.data}`, "server-msg");
+                try {
+                    const data = JSON.parse(event.data);
+                    handleServerMessage(data);
+                } catch (e) {
+                    logMessage(`Client: Error parsing JSON: ${e}`, "error");
+                    statusDiv.textContent = "Error processing server message.";
+                }
+            };
+
+            socket.onclose = function(event) {
+                logMessage(`Client: Disconnected: ${event.reason || 'Unknown'} (Code: ${event.code})`, "error");
+                statusDiv.textContent = "Disconnected. Attempting to reconnect...";
+                currentBoardState = null;
+                selectedSquare = null;
+                drawBoard(Array(8).fill().map(() => Array(8).fill(null))); // Clear board on disconnect
+                setTimeout(connect, 3000);
+            };
+
+            socket.onerror = function(error) {
+                logMessage(`Client: WebSocket Error`, "error");
+                statusDiv.textContent = "WebSocket connection error.";
+            };
+        }
+
+        function handleServerMessage(data) {
+            if (data.message) {
+                statusDiv.textContent = data.message;
+            }
+
+            if (data.role) {
+                myPlayerRole = data.role;
+                playerRoleDiv.textContent = `Your Role: ${myPlayerRole}`;
+            }
+
+            if (data.board) {
+                logMessage("Client: Received board data from server.");
+                // console.log("Board data from server:", data.board); // For browser console debugging
+                currentBoardState = data.board; // Update the global board state
+                drawBoard(currentBoardState); // Redraw the board with new data
+            } else {
+                // If a message type implies a board update but no board is sent,
+                // it might be an issue or by design (e.g. simple status update)
+                // logMessage("Client: Message received without board data.", "info");
+            }
+            
+            if (data.type === "game_start") {
+                turnIndicatorDiv.textContent = "Turn: Player 1 (White)";
+                isMyTurn = (myPlayerRole === "Player 1 (White)");
+                lastMoveInfoDiv.textContent = "Last move: N/A";
+                 if (!data.board) logMessage("Client: game_start message missing board data!", "error");
+            } else if (data.type === "opponent_move") {
+                turnIndicatorDiv.textContent = `Turn: ${myPlayerRole}'s turn`; // Should be "Your turn"
+                isMyTurn = true;
+                if (data.move) lastMoveInfoDiv.textContent = `Last move: ${data.move.toUpperCase()} ${data.captured ? '(Cap: '+getPieceSymbol(data.captured)+')' : ''}`;
+            } else if (data.type === "move_ack") {
+                const opponentRole = myPlayerRole === "Player 1 (White)" ? "Player 2 (Black)" : "Player 1 (White)";
+                turnIndicatorDiv.textContent = `Turn: ${opponentRole}'s turn`;
+                isMyTurn = false;
+                if (data.move) lastMoveInfoDiv.textContent = `Last move: ${data.move.toUpperCase()} ${data.captured ? '(Cap: '+getPieceSymbol(data.captured)+')' : ''}`;
+            } else if (data.type === "error") {
+                logMessage(`Client: Server error message: ${data.message}`, "error");
+            }
+        }
+
+        function drawBoard(boardData) {
+            chessboardDiv.innerHTML = ''; // Clear previous board
+            if (!boardData || !Array.isArray(boardData) || boardData.length !== 8) {
+                logMessage("Client: Invalid or empty boardData for drawing. Displaying empty grid.", "error");
+                // Fallback to drawing an empty grid if boardData is problematic
+                boardData = Array(8).fill().map(() => Array(8).fill(null));
+            }
+
+            // Server sends board with row 0 as rank 1, row 7 as rank 8.
+            // For display, we iterate so displayRow 0 is rank 8 (top).
+            for (let displayRow = 0; displayRow < 8; displayRow++) {
+                const boardRowIndex = 7 - displayRow; // boardData[7] is rank 8, boardData[0] is rank 1
+
+                if (!boardData[boardRowIndex] || !Array.isArray(boardData[boardRowIndex]) || boardData[boardRowIndex].length !== 8) {
+                    logMessage(`Client: Invalid row data at boardRowIndex ${boardRowIndex}. Skipping row.`, "error");
+                    // Fill with empty squares for this row to maintain grid structure
+                    for (let col = 0; col < 8; col++) {
+                        const emptySquare = document.createElement('div');
+                        emptySquare.classList.add('square');
+                        emptySquare.classList.add((displayRow + col) % 2 === 0 ? 'light' : 'dark');
+                        chessboardDiv.appendChild(emptySquare);
+                    }
+                    continue; 
+                }
+
+                for (let col = 0; col < 8; col++) { // 0 for file 'a', 7 for file 'h'
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.classList.add((displayRow + col) % 2 === 0 ? 'light' : 'dark');
+                    
+                    const piece = boardData[boardRowIndex][col]; // Piece code like "wP", "bR", or null
+                    
+                    // logMessage(`Client: Drawing square [${boardRowIndex},${col}], Piece: ${piece}`); // Can be very verbose
+
+                    if (piece) {
+                        square.textContent = getPieceSymbol(piece);
+                        square.classList.add(piece.startsWith('w') ? 'piece-white' : 'piece-black');
+                    }
+                    
+                    square.dataset.row = boardRowIndex;
+                    square.dataset.col = col;
+                    square.dataset.algebraic = indicesToAlgebraic(boardRowIndex, col);
+
+                    square.addEventListener('click', onSquareClick);
+                    chessboardDiv.appendChild(square);
+                }
+            }
+            logMessage("Client: Board redrawn.");
+        }
+        
+        function getPieceSymbol(pieceCode) {
+            if (!pieceCode || typeof pieceCode !== 'string') return ''; // Ensure pieceCode is a string
+            const type = pieceCode.substring(1); 
+            const isWhite = pieceCode.startsWith('w');
+            switch(type) {
+                case 'P': return isWhite ? '♙' : '♟';
+                case 'R': return isWhite ? '♖' : '♜';
+                case 'N': return isWhite ? '♘' : '♞';
+                case 'B': return isWhite ? '♗' : '♝';
+                case 'Q': return isWhite ? '♕' : '♛';
+                case 'K': return isWhite ? '♔' : '♚';
+                default: 
+                    // logMessage(`Client: Unknown piece code for symbol: ${pieceCode}`, "error");
+                    return pieceCode; // Fallback
+            }
+        }
+
+        function onSquareClick(event) {
+            if (!isMyTurn) {
+                logMessage("Client: Not your turn.", "info");
+                return;
+            }
+            if (!currentBoardState) { // Should not happen if board is drawn
+                logMessage("Client: Board state not available.", "error");
+                return;
+            }
+
+            const clickedSquareDiv = event.currentTarget;
+            const row = parseInt(clickedSquareDiv.dataset.row);
+            const col = parseInt(clickedSquareDiv.dataset.col);
+            const algebraic = clickedSquareDiv.dataset.algebraic;
+            // Ensure currentBoardState and the specific row are valid before accessing piece
+            const piece = (currentBoardState && currentBoardState[row]) ? currentBoardState[row][col] : null;
+
+
+            if (selectedSquare) { 
+                if (selectedSquare.row === row && selectedSquare.col === col) {
+                    selectedSquare.div.classList.remove('selected');
+                    selectedSquare = null;
+                    return;
+                }
+                const fromAlg = selectedSquare.algebraic;
+                const toAlg = algebraic;
+                const moveString = fromAlg + toAlg;
+
+                logMessage(`Client: Attempting move: ${moveString}`);
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(moveString);
+                } else {
+                    logMessage("Client: WebSocket not connected. Cannot send move.", "error");
+                }
+                selectedSquare.div.classList.remove('selected');
+                selectedSquare = null;
+            } else { 
+                if (!piece) {
+                    // logMessage("Client: Clicked an empty square.", "info");
+                    return; 
+                }
+                const isWhitePiece = piece.startsWith('w');
+                if ((myPlayerRole === "Player 1 (White)" && !isWhitePiece) ||
+                    (myPlayerRole === "Player 2 (Black)" && isWhitePiece)) {
+                    logMessage("Client: Cannot select opponent's piece.", "error");
+                    return;
+                }
+                selectedSquare = { row, col, piece, algebraic, div: clickedSquareDiv };
+                clickedSquareDiv.classList.add('selected');
+                logMessage(`Client: Selected ${getPieceSymbol(piece)} at ${algebraic}`);
+            }
+        }
+
+        function indicesToAlgebraic(row, col) {
+            const file = String.fromCharCode('a'.charCodeAt(0) + col);
+            const rank = (row + 1).toString();
+            return file + rank;
+        }
+
+        function logMessage(message, type = "info") { // type can be "info", "error", "success", "server-msg"
+            const p = document.createElement('p');
+            p.textContent = message;
+            p.className = type;
+            messagesDiv.appendChild(p);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        connect();
+    </script>
+</body>
+</html>
