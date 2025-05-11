@@ -26,7 +26,7 @@ JSocket provides a simple yet powerful WebSocket implementation in Java with no 
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/JSocket.git
+git clone https://github.com/AceAtDev/JSocket--java-simple-websocket
 cd JSocket
 
 # Run the Chess server (using your IDE or command line)
