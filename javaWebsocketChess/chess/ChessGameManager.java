@@ -2,7 +2,6 @@ package javaWebsocketChess.chess;
 
 import javaWebsocketChess.websocketCore.src.main.java.com.jSocket.websocket.server.ClientHandler; // Correct import
 import javaWebsocketChess.websocketCore.src.main.java.com.jSocket.websocket.server.WebSocketListener; // Correct import
-// Other imports for managing players, games, etc.
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
