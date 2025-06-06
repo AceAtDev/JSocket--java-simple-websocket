@@ -7,6 +7,8 @@
 
 JSocket provides a simple yet powerful WebSocket implementation in Java with no external dependencies. Perfect for learning WebSocket internals, building custom real-time features, or integrating into existing Java applications.
 
+#### Video Below is just an example of what the JSocket can do
+
 ![Chess Game Demo](docs/media/chess-demo.gif)
 
 *Chess game demo built with JSocket*
