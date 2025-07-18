@@ -5,6 +5,8 @@
 
 #### A lightweight, easy-to-understand Java WebSocket server for real-time applications
 
+![Cover image](docs/media/cover_image.png)
+
 JSocket provides a simple yet powerful WebSocket implementation in Java with no external dependencies. Perfect for learning WebSocket internals, building custom real-time features, or integrating into existing Java applications.
 
 #### Video Below is just an example of what the JSocket can do
