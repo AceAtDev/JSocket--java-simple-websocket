@@ -5,7 +5,7 @@
 
 #### A lightweight, easy-to-understand Java WebSocket server for real-time applications
 
-[![Two browsers playing chess through the JSocket server](https://github.com/AceAtDev/JSocket--java-simple-websocket/raw/main/docs/media/chess-demo.gif)](https://github.com/AceAtDev/JSocket--java-simple-websocket/blob/main/docs/media/chess-demo.mp4)
+[![Two browsers playing chess through the JSocket server](https://github.com/AceAtDev/JSocket--java-simple-websocket/raw/master/docs/media/chess-demo.gif)](https://github.com/AceAtDev/JSocket--java-simple-websocket/blob/master/docs/media/chess-demo.mp4)
 
 *Two separate browser sessions play the first six moves of a chess game; each move goes through the JSocket server and appears on the other board right away. Click for the full-quality MP4.*
 
