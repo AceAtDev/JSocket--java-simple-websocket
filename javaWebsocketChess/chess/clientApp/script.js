@@ -5,7 +5,11 @@ const playerRoleDiv = document.getElementById('player-role');
 const messagesDiv = document.getElementById('messages');
 const lastMoveInfoDiv = document.getElementById('last-move-info');
 
-const wsUrl = `ws://${window.location.hostname}:8080`;
+// Opened from file:// the hostname is empty, so fall back to localhost.
+// Use ?port=NNNN when the server runs on a port other than 8080.
+const wsHost = window.location.hostname || 'localhost';
+const wsPort = new URLSearchParams(window.location.search).get('port') || '8080';
+const wsUrl = `ws://${wsHost}:${wsPort}`;
 let socket;
 
 let currentBoardState = null; // Will hold the 8x8 array from the server

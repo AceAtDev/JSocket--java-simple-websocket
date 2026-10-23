@@ -5,15 +5,13 @@
 
 #### A lightweight, easy-to-understand Java WebSocket server for real-time applications
 
+[![Two browsers playing chess through the JSocket server](https://github.com/AceAtDev/JSocket--java-simple-websocket/raw/main/docs/media/chess-demo.gif)](https://github.com/AceAtDev/JSocket--java-simple-websocket/blob/main/docs/media/chess-demo.mp4)
+
+*Two separate browser sessions play the first six moves of a chess game; each move goes through the JSocket server and appears on the other board right away. Click for the full-quality MP4.*
+
 ![Cover image](docs/media/cover_image.png)
 
-JSocket provides a simple yet powerful WebSocket implementation in Java with no external dependencies. Perfect for learning WebSocket internals, building custom real-time features, or integrating into existing Java applications.
-
-#### Video Below is just an example of what the JSocket can do
-
-![Chess Game Demo](docs/media/chess-demo.gif)
-
-*Chess game demo built with JSocket*
+JSocket provides a simple WebSocket implementation in Java with no external dependencies. It is useful for learning WebSocket internals, building custom real-time features, or adding WebSocket support to existing Java applications.
 
 ## ✨ Features
 
@@ -22,27 +20,37 @@ JSocket provides a simple yet powerful WebSocket implementation in Java with no 
 - **Concurrent client handling** with dedicated reader/writer threads
 - **Event-driven architecture** via simple listener interface
 - **Working Chess game demo** showcasing real-time capabilities
-- **Zero external dependencies** - just pure Java
+- **Zero external dependencies**: only the Java standard library
 
 ## 🚀 Quick Start
 
-### Run the Chess Demo
+### Run the demo
+
+Requires a JDK (8 or newer). From a terminal:
 
 ```bash
-# Clone the repository
 git clone https://github.com/AceAtDev/JSocket--java-simple-websocket
-cd JSocket
+cd JSocket--java-simple-websocket
 
-# Run the Chess server (using your IDE or command line)
-java javaWebsocketChess.chess.ChessServerMain
+# Compile everything into out/
+javac -d out $(find javaWebsocketChess -name "*.java")
 
-# Open in browser: javaWebsocketChess/chess/clientApp/index.html
-# (Open in two tabs to play against yourself)
+# Start the chess server (default port 8080; pass another port as an argument)
+java -cp out javaWebsocketChess.chess.ChessServerMain
+```
+
+Then open `javaWebsocketChess/chess/clientApp/index.html` in two browser tabs or windows. The first one to connect plays White, the second plays Black. If you started the server on a different port, add it to the page URL, for example `index.html?port=8765`.
+
+The GIF above was recorded with [`docs/demo/record_demo.py`](docs/demo/record_demo.py). It compiles and starts the server, plays six moves in two Playwright browser sessions, and builds the MP4 and GIF with ffmpeg:
+
+```bash
+pip install playwright && playwright install chromium
+python docs/demo/record_demo.py            # or: --port 8765 if 8080 is busy
 ```
 
 ### Use JSocket in Your Project
 
-1️⃣ **Copy the core files** from `javaWebsocketChess/websocketCore/` into your project
+1️⃣ **Copy the core files** from `javaWebsocketChess/websocketCore/` into your project (the classes use the package `javaWebsocketChess.websocketCore.src.main.java.com.jSocket.websocket`, so keep that folder layout or update the `package` and `import` lines)
 
 2️⃣ **Create your handler:**
 
@@ -87,7 +95,7 @@ public static void main(String[] args) {
 
 ## 🧩 Key Components
 
-JSocket's architecture is simple but powerful:
+JSocket has five main parts:
 
 - **`WebSocketServer`**: Manages TCP connections and handshakes
 - **`ClientHandler`**: Manages WebSocket connection lifecycle
@@ -121,14 +129,14 @@ Contributions are welcome! Whether it's bug reports, feature requests, or code c
 
 ## 📄 License
 
-JSocket is [MIT licensed](LICENSE.md).
+JSocket is [MIT licensed](LICENSE).
 
 ---
 
 #### Developed with ❤️ for the craft of developing
 
-[Report Bug](https://github.com/AceAtDev/JSocket--java-simple-websocket-/issues) •
-[Request Feature](https://github.com/AceAtDev/JSocket--java-simple-websocket-/issues)
+[Report Bug](https://github.com/AceAtDev/JSocket--java-simple-websocket/issues) •
+[Request Feature](https://github.com/AceAtDev/JSocket--java-simple-websocket/issues)
 
 ---
 

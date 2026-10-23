@@ -93,7 +93,7 @@ body {
     right: 2px;
     top: 25px;
     height: calc(100% - 50px);
-    flex-direction: column-reverse;
+    flex-direction: column;
     justify-content: space-around;
 }
 
